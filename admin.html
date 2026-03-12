@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel · Estate Booking</title>
+  <title>Administration/Registrar · Estate Booking</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,16 +13,15 @@
   <div class="auth-wrap">
     <div class="auth-box">
       <div class="auth-logo">🔐</div>
-      <div class="auth-title">Admin Login</div>
-      <div class="auth-sub">Estate Booking Management · MBA College</div>
+      <div class="auth-title">Administration / Registrar</div>
+      <div class="auth-sub">Estate Booking Management · MICA, Ahmedabad</div>
 
       <div id="adminLoginAlert"></div>
 
       <div class="form-group">
-        <label>Admin Password</label>
+        <label>Password</label>
         <input class="form-control" id="adminPwd" type="password" placeholder="Enter password"
           onkeydown="if(event.key==='Enter') adminLogin()">
-        <div class="form-hint" style="margin-top:.35rem">Default: admin@mba2024</div>
       </div>
 
       <button class="btn btn-primary" style="width:100%;padding:.8rem" onclick="adminLogin()">
@@ -40,10 +39,10 @@
   <nav class="navbar">
     <div>
       <div class="navbar-brand">🏛️ Estate Booking Portal</div>
-      <div class="navbar-sub">MBA College · Admin Dashboard</div>
+      <div class="navbar-sub">MICA, Ahmedabad · Administration / Registrar</div>
     </div>
     <div class="navbar-right">
-      <span class="navbar-user">Admin</span>
+      <span class="navbar-user">Registrar</span>
       <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Logout</button>
     </div>
   </nav>

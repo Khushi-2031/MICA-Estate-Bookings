@@ -12,15 +12,14 @@ const PURPOSES = ['Case Competition', 'Committee Work', 'Personal Project'];
 
 const ADMIN_PASSWORD = 'admin@mba2024';
 
-// 5:00 PM → 11:00 PM in 30-min steps
+// 24-hour full-day hourly slots
 const TIME_SLOTS = [];
-for (let h = 17; h <= 22; h++) {
+for (let h = 0; h <= 23; h++) {
   TIME_SLOTS.push(`${String(h).padStart(2,'0')}:00`);
-  TIME_SLOTS.push(`${String(h).padStart(2,'0')}:30`);
 }
-TIME_SLOTS.push('23:00');
-// START_TIMES: all except last (can't start at 11 PM)
-const START_TIMES = TIME_SLOTS.slice(0, -1);
+// START_TIMES: all except midnight end (can't start at 23:00 with no end after it)
+// Actually allow starting at any hour; end must be after start
+const START_TIMES = TIME_SLOTS.slice(0, -1); // 00:00 to 22:00
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -244,6 +243,7 @@ function loadMyBookings() {
         <div class="bcard-meta">
           <span>📅 ${formatDate(b.date)}</span>
           <span>🕐 ${formatTime(b.startTime)} – ${formatTime(b.endTime)}</span>
+          <span>👥 ${b.numPeople} ${b.numPeople === 1 ? 'person' : 'people'}</span>
         </div>
         <div class="bcard-tags">
           <span class="purpose-tag ${getPurposeClass(b.purpose)}">${b.purpose}</span>
@@ -283,10 +283,14 @@ function submitBooking() {
   const start   = document.getElementById('startTime').value;
   const end     = document.getElementById('endTime').value;
   const purpose = document.querySelector('input[name="purpose"]:checked')?.value;
-  const desc    = document.getElementById('description').value.trim();
+  const desc      = document.getElementById('description').value.trim();
+  const numPeople = parseInt(document.getElementById('numPeople').value, 10);
 
   if (!estate || !date || !start || !end || !purpose) {
     flash('formAlert', 'Please fill in all required fields.', 'error'); return;
+  }
+  if (!numPeople || numPeople < 1) {
+    flash('formAlert', 'Please enter the number of people attending.', 'error'); return;
   }
   if (start >= end) {
     flash('formAlert', 'End time must be after start time.', 'error'); return;
@@ -311,7 +315,7 @@ function submitBooking() {
     requestedEstate: estate,
     allocatedEstate: estate,
     date, startTime: start, endTime: end,
-    purpose, description: desc,
+    purpose, numPeople, description: desc,
     status: 'pending',
     adminNote: '',
     createdAt: new Date().toISOString(),
@@ -329,6 +333,7 @@ function resetForm() {
   document.getElementById('startTime').value    = '';
   document.getElementById('endTime').innerHTML  = '<option value="">— Select end time —</option>';
   document.querySelectorAll('input[name="purpose"]').forEach(r => r.checked = false);
+  document.getElementById('numPeople').value    = '';
   document.getElementById('description').value  = '';
 }
 
@@ -539,6 +544,7 @@ function openModal(id) {
       <div><span class="info-lbl">Allocated Estate</span><strong>${b.allocatedEstate}</strong></div>
       <div><span class="info-lbl">Date</span>${formatDate(b.date)}</div>
       <div><span class="info-lbl">Time</span><strong>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</strong></div>
+      <div><span class="info-lbl">No. of People</span><strong>${b.numPeople || '—'}</strong></div>
       ${b.description ? `<div style="grid-column:1/-1"><span class="info-lbl">Notes</span>${b.description}</div>` : ''}
       <div style="grid-column:1/-1"><span class="info-lbl">Status</span><span class="badge badge-${b.status}">${b.status}</span></div>
     </div>`;

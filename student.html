@@ -14,7 +14,7 @@
     <div class="auth-box">
       <div class="auth-logo">🏛️</div>
       <div class="auth-title">Student Portal</div>
-      <div class="auth-sub">Estate Booking · MBA College</div>
+      <div class="auth-sub">Estate Booking · MICA, Ahmedabad</div>
 
       <div id="loginAlert"></div>
 
@@ -49,7 +49,7 @@
   <nav class="navbar">
     <div>
       <div class="navbar-brand">🏛️ Estate Booking Portal</div>
-      <div class="navbar-sub">MBA College · Student Dashboard</div>
+      <div class="navbar-sub">MICA, Ahmedabad · Student Dashboard</div>
     </div>
     <div class="navbar-right">
       <span class="navbar-user" id="greeting"></span>
@@ -114,7 +114,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>Start Time * <span style="color:var(--gray);font-weight:400">(5 PM onwards)</span></label>
+            <label>Start Time *</label>
             <select class="form-control" id="startTime"></select>
           </div>
           <div class="form-group">
@@ -141,9 +141,15 @@
         </div>
 
         <div class="form-group">
+          <label>Number of People Attending *</label>
+          <input class="form-control" id="numPeople" type="number" min="1" max="500"
+            placeholder="e.g. 25">
+        </div>
+
+        <div class="form-group">
           <label>Description / Notes <span style="color:var(--gray);font-weight:400">(optional)</span></label>
           <textarea class="form-control" id="description" rows="3"
-            placeholder="Brief description of your event, participants, or any special requirements..."></textarea>
+            placeholder="Brief description of your event or any special requirements..."></textarea>
         </div>
 
         <div style="display:flex;gap:.75rem">
@@ -162,7 +168,7 @@
           <li>Check back in <strong>My Bookings</strong> for your final allocation.</li>
         </ol>
         <div style="margin-top:.75rem;font-size:.78rem;color:#64748b">
-          Available estates: Mani Iyer Auditorium · SH1–SH8 · CR1–CR4 · Discussion Room · FPM Board Room
+          Available estates: Mani Iyer Auditorium · SH1–SH8 · CR1–CR4 · Discussion Room · FPM Board Room &nbsp;·&nbsp; Slots available 24/7, hourly
         </div>
       </div>
     </div>
