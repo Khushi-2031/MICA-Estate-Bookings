@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal · Estate Booking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ─── Login Screen ──────────────────────────────────────────────────────── -->
+<div id="loginScreen">
+  <div class="auth-wrap">
+    <div class="auth-box">
+      <div class="auth-logo">🏛️</div>
+      <div class="auth-title">Student Portal</div>
+      <div class="auth-sub">Estate Booking · MBA College</div>
+
+      <div id="loginAlert"></div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input class="form-control" id="sName" type="text" placeholder="e.g. Priya Sharma"
+          onkeydown="if(event.key==='Enter') studentLogin()">
+      </div>
+      <div class="form-group">
+        <label>Roll Number</label>
+        <input class="form-control" id="sRoll" type="text" placeholder="e.g. MBA2024001"
+          onkeydown="if(event.key==='Enter') studentLogin()">
+      </div>
+      <div class="form-group">
+        <label>College Email</label>
+        <input class="form-control" id="sEmail" type="email" placeholder="you@college.edu"
+          onkeydown="if(event.key==='Enter') studentLogin()">
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:.8rem" onclick="studentLogin()">
+        Access Portal →
+      </button>
+
+      <div class="auth-back"><a href="index.html">← Back to Home</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Main App ──────────────────────────────────────────────────────────── -->
+<div id="appScreen" style="display:none">
+
+  <nav class="navbar">
+    <div>
+      <div class="navbar-brand">🏛️ Estate Booking Portal</div>
+      <div class="navbar-sub">MBA College · Student Dashboard</div>
+    </div>
+    <div class="navbar-right">
+      <span class="navbar-user" id="greeting"></span>
+      <button class="btn btn-ghost btn-sm" onclick="studentLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <div id="mainAlert"></div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('paneMyBookings', this)">📋 My Bookings</div>
+      <div class="tab" onclick="switchTab('paneNewBooking', this)">+ New Request</div>
+    </div>
+
+    <!-- ── My Bookings ──────────────────────────────────────────────────── -->
+    <div id="paneMyBookings" class="tab-pane active">
+
+      <div class="section-hdr">
+        <h2>My Booking Requests</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadMyBookings()">🔄 Refresh</button>
+      </div>
+
+      <div class="filter-row">
+        <button class="btn btn-sm filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="btn btn-sm filter-btn" onclick="setFilter('pending',this)">⏳ Pending</button>
+        <button class="btn btn-sm filter-btn" onclick="setFilter('approved',this)">✅ Approved</button>
+        <button class="btn btn-sm filter-btn" onclick="setFilter('modified',this)">🔄 Modified</button>
+        <button class="btn btn-sm filter-btn" onclick="setFilter('rejected',this)">❌ Rejected</button>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.78rem;color:var(--gray)">
+        <span style="display:flex;align-items:center;gap:.35rem"><span style="width:12px;height:12px;background:#f59e0b;border-radius:3px;display:inline-block"></span>Pending — awaiting admin review</span>
+        <span style="display:flex;align-items:center;gap:.35rem"><span style="width:12px;height:12px;background:#10b981;border-radius:3px;display:inline-block"></span>Approved — booking confirmed</span>
+        <span style="display:flex;align-items:center;gap:.35rem"><span style="width:12px;height:12px;background:#3b82f6;border-radius:3px;display:inline-block"></span>Modified — admin changed estate/time</span>
+        <span style="display:flex;align-items:center;gap:.35rem"><span style="width:12px;height:12px;background:#ef4444;border-radius:3px;display:inline-block"></span>Rejected</span>
+      </div>
+
+      <div id="bookingsList"></div>
+    </div>
+
+    <!-- ── New Booking ──────────────────────────────────────────────────── -->
+    <div id="paneNewBooking" class="tab-pane">
+      <div class="card">
+        <div class="card-title">Submit a New Booking Request</div>
+
+        <div id="formAlert"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Preferred Estate *</label>
+            <select class="form-control" id="estateSelect"></select>
+          </div>
+          <div class="form-group">
+            <label>Date *</label>
+            <input class="form-control" id="bookingDate" type="date">
+            <div class="form-hint">Bookings only available from today onwards</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Time * <span style="color:var(--gray);font-weight:400">(5 PM onwards)</span></label>
+            <select class="form-control" id="startTime"></select>
+          </div>
+          <div class="form-group">
+            <label>End Time *</label>
+            <select class="form-control" id="endTime">
+              <option value="">— Select start time first —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Purpose *</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="purpose" value="Case Competition"> Case Competition
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="purpose" value="Committee Work"> Committee Work
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="purpose" value="Personal Project"> Personal Project
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Notes <span style="color:var(--gray);font-weight:400">(optional)</span></label>
+          <textarea class="form-control" id="description" rows="3"
+            placeholder="Brief description of your event, participants, or any special requirements..."></textarea>
+        </div>
+
+        <div style="display:flex;gap:.75rem">
+          <button class="btn btn-primary" onclick="submitBooking()">Submit Request</button>
+          <button class="btn btn-outline" onclick="resetForm()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Info box -->
+      <div class="card" style="background:#f0f6ff;border:1px solid #bfdbfe">
+        <div class="card-title" style="color:#1d4ed8">ℹ️ How It Works</div>
+        <ol style="padding-left:1.2rem;font-size:.85rem;line-height:2;color:#1e40af">
+          <li>Fill in your preferred estate, date, time, and purpose.</li>
+          <li>Submit your request — it will be marked <strong>Pending</strong>.</li>
+          <li>The admin will review, then approve, reject, or modify (reassign estate/time) your request.</li>
+          <li>Check back in <strong>My Bookings</strong> for your final allocation.</li>
+        </ol>
+        <div style="margin-top:.75rem;font-size:.78rem;color:#64748b">
+          Available estates: Mani Iyer Auditorium · SH1–SH8 · CR1–CR4 · Discussion Room · FPM Board Room
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', initStudentPage);
+</script>
+</body>
+</html>

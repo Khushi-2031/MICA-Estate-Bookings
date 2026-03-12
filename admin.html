@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel · Estate Booking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ─── Admin Login ──────────────────────────────────────────────────────── -->
+<div id="adminLoginScreen">
+  <div class="auth-wrap">
+    <div class="auth-box">
+      <div class="auth-logo">🔐</div>
+      <div class="auth-title">Admin Login</div>
+      <div class="auth-sub">Estate Booking Management · MBA College</div>
+
+      <div id="adminLoginAlert"></div>
+
+      <div class="form-group">
+        <label>Admin Password</label>
+        <input class="form-control" id="adminPwd" type="password" placeholder="Enter password"
+          onkeydown="if(event.key==='Enter') adminLogin()">
+        <div class="form-hint" style="margin-top:.35rem">Default: admin@mba2024</div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:.8rem" onclick="adminLogin()">
+        Login →
+      </button>
+
+      <div class="auth-back"><a href="index.html">← Back to Home</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Admin Dashboard ──────────────────────────────────────────────────── -->
+<div id="adminDash" style="display:none">
+
+  <nav class="navbar">
+    <div>
+      <div class="navbar-brand">🏛️ Estate Booking Portal</div>
+      <div class="navbar-sub">MBA College · Admin Dashboard</div>
+    </div>
+    <div class="navbar-right">
+      <span class="navbar-user">Admin</span>
+      <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <div id="dashAlert"></div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchAdminTab('aPending',this)">⏳ Pending Requests</div>
+      <div class="tab" onclick="switchAdminTab('aAll',this)">📋 All Bookings</div>
+      <div class="tab" onclick="switchAdminTab('aSchedule',this)">📅 Daily Schedule</div>
+    </div>
+
+    <!-- ── Pending ──────────────────────────────────────────────────────── -->
+    <div id="aPending" class="tab-pane active">
+      <div class="section-hdr">
+        <h2>Pending Requests</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadPending();loadStats()">🔄 Refresh</button>
+      </div>
+      <div id="pendingList"></div>
+    </div>
+
+    <!-- ── All Bookings ─────────────────────────────────────────────────── -->
+    <div id="aAll" class="tab-pane">
+      <div class="filter-row" style="margin-bottom:1rem">
+        <select class="form-control" id="filterStatus" style="width:auto" onchange="loadAll()">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="modified">Modified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select class="form-control" id="filterEstate" style="width:auto" onchange="loadAll()"></select>
+        <input class="form-control" id="filterDate" type="date" style="width:auto" onchange="loadAll()">
+        <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear Filters</button>
+      </div>
+      <div id="allList"></div>
+    </div>
+
+    <!-- ── Schedule ─────────────────────────────────────────────────────── -->
+    <div id="aSchedule" class="tab-pane">
+      <div class="filter-row" style="margin-bottom:1rem">
+        <input class="form-control" id="scheduleDate" type="date" style="width:auto">
+        <button class="btn btn-primary btn-sm" onclick="loadSchedule()">View Schedule</button>
+      </div>
+      <div id="scheduleList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── Review / Modify Modal ────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Review Booking Request</div>
+
+    <!-- Booking info summary -->
+    <div id="modalInfo"></div>
+
+    <!-- Conflict warning (shown if applicable) -->
+    <div id="conflictWarn" style="display:none"></div>
+
+    <!-- Modify fields (shown when Modify is toggled) -->
+    <div id="modifyFields" style="display:none">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#1d4ed8">
+        ✏️ You can reassign the estate and/or change the booking time below. The student will see these changes.
+      </div>
+      <div class="form-group">
+        <label>Reassign to Estate</label>
+        <select class="form-control" id="modalEstate"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>New Start Time</label>
+          <select class="form-control" id="modalStart"></select>
+        </div>
+        <div class="form-group">
+          <label>New End Time</label>
+          <select class="form-control" id="modalEnd"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Admin Note <span style="color:var(--gray);font-weight:400">(visible to student)</span></label>
+      <textarea class="form-control" id="adminNote" rows="2"
+        placeholder="Reason for decision, reassignment note, or any message to the student..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="processAction('reject')">❌ Reject</button>
+      <button class="btn btn-warning" id="modifyBtn" onclick="toggleModify()">✏️ Modify</button>
+      <button class="btn btn-success" onclick="processAction('approve')">✅ Approve</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', initAdminPage);
+</script>
+</body>
+</html>
