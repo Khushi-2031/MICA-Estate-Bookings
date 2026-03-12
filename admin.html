@@ -119,10 +119,17 @@
         <label>Reassign to Estate</label>
         <select class="form-control" id="modalEstate"></select>
       </div>
-      <div class="form-row">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
         <div class="form-group">
           <label>New Start Time</label>
           <select class="form-control" id="modalStart"></select>
+        </div>
+        <div class="form-group">
+          <label>Ends On</label>
+          <select class="form-control" id="modalEndDay">
+            <option value="0">Same Day</option>
+            <option value="1">Next Day</option>
+          </select>
         </div>
         <div class="form-group">
           <label>New End Time</label>

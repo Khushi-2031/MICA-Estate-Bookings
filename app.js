@@ -52,7 +52,18 @@ function getPurposeClass(p) {
   return 'tag-personal';
 }
 
-function timesOverlap(s1, e1, s2, e2) {
+function getNextDay(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+}
+
+// Datetime-aware overlap — handles overnight bookings
+function datetimeOverlap(sDate1, sTime1, eDate1, eTime1, sDate2, sTime2, eDate2, eTime2) {
+  const s1 = new Date(sDate1 + 'T' + sTime1 + ':00');
+  const e1 = new Date(eDate1 + 'T' + eTime1 + ':00');
+  const s2 = new Date(sDate2 + 'T' + sTime2 + ':00');
+  const e2 = new Date(eDate2 + 'T' + eTime2 + ':00');
   return s1 < e2 && e1 > s2;
 }
 
@@ -84,14 +95,14 @@ function updateBooking(id, changes) {
 // ─── Conflict detection ───────────────────────────────────────────────────────
 // Only approved/modified bookings block slots
 
-function hasConflict(estate, date, start, end, excludeId = null) {
-  return getBookings().filter(b =>
-    b.id !== excludeId &&
-    (b.status === 'approved' || b.status === 'modified') &&
-    b.allocatedEstate === estate &&
-    b.date === date &&
-    timesOverlap(start, end, b.startTime, b.endTime)
-  );
+function hasConflict(estate, startDate, startTime, endDate, endTime, excludeId = null) {
+  return getBookings().filter(b => {
+    if (b.id === excludeId) return false;
+    if (b.status !== 'approved' && b.status !== 'modified') return false;
+    if (b.allocatedEstate !== estate) return false;
+    const bEndDate = b.endDate || b.date; // backward compat with old bookings
+    return datetimeOverlap(startDate, startTime, endDate, endTime, b.date, b.startTime, bEndDate, b.endTime);
+  });
 }
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
@@ -142,6 +153,7 @@ function initStudentPage() {
   document.getElementById('bookingDate').value = todayStr();
 
   document.getElementById('startTime').addEventListener('change', refreshEndTimes);
+  document.getElementById('endDay').addEventListener('change', refreshEndTimes);
 
   // Auto-restore session
   const s = getStudent();
@@ -242,7 +254,7 @@ function loadMyBookings() {
         ${reassigned ? `<div class="bcard-reassigned">Originally: ${b.requestedEstate} → Reassigned by admin</div>` : ''}
         <div class="bcard-meta">
           <span>📅 ${formatDate(b.date)}</span>
-          <span>🕐 ${formatTime(b.startTime)} – ${formatTime(b.endTime)}</span>
+          <span>🕐 ${formatTime(b.startTime)} – ${formatTime(b.endTime)}${b.endDate && b.endDate !== b.date ? ' <span style="color:#3b82f6;font-weight:700">(next day)</span>' : ''}</span>
           <span>👥 ${b.numPeople} ${b.numPeople === 1 ? 'person' : 'people'}</span>
         </div>
         <div class="bcard-tags">
@@ -262,27 +274,41 @@ function loadMyBookings() {
 // ─── Student: submit booking ──────────────────────────────────────────────────
 
 function refreshEndTimes() {
-  const start = document.getElementById('startTime').value;
+  const start  = document.getElementById('startTime').value;
+  const endDay = document.getElementById('endDay').value;
   const endSel = document.getElementById('endTime');
   endSel.innerHTML = '<option value="">— Select end time —</option>';
   if (!start) return;
-  const idx = TIME_SLOTS.indexOf(start);
-  TIME_SLOTS.slice(idx + 1).forEach(t => {
-    const o = document.createElement('option');
-    o.value = t; o.textContent = formatTime(t);
-    endSel.appendChild(o);
-  });
+
+  if (endDay === '1') {
+    // Next day — all 24 hours are valid end times
+    TIME_SLOTS.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = formatTime(t) + ' (next day)';
+      endSel.appendChild(o);
+    });
+  } else {
+    // Same day — only times strictly after start
+    const idx = TIME_SLOTS.indexOf(start);
+    TIME_SLOTS.slice(idx + 1).forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = formatTime(t);
+      endSel.appendChild(o);
+    });
+  }
 }
 
 function submitBooking() {
   const s = getStudent();
   if (!s) return;
 
-  const estate  = document.getElementById('estateSelect').value;
-  const date    = document.getElementById('bookingDate').value;
-  const start   = document.getElementById('startTime').value;
-  const end     = document.getElementById('endTime').value;
-  const purpose = document.querySelector('input[name="purpose"]:checked')?.value;
+  const estate    = document.getElementById('estateSelect').value;
+  const date      = document.getElementById('bookingDate').value;
+  const start     = document.getElementById('startTime').value;
+  const end       = document.getElementById('endTime').value;
+  const endDay    = document.getElementById('endDay').value;
+  const endDate   = endDay === '1' ? getNextDay(date) : date;
+  const purpose   = document.querySelector('input[name="purpose"]:checked')?.value;
   const desc      = document.getElementById('description').value.trim();
   const numPeople = parseInt(document.getElementById('numPeople').value, 10);
 
@@ -292,19 +318,19 @@ function submitBooking() {
   if (!numPeople || numPeople < 1) {
     flash('formAlert', 'Please enter the number of people attending.', 'error'); return;
   }
-  if (start >= end) {
-    flash('formAlert', 'End time must be after start time.', 'error'); return;
+  // Same-day: end must be after start. Next-day: always valid.
+  if (endDay === '0' && start >= end) {
+    flash('formAlert', 'End time must be after start time for same-day bookings.', 'error'); return;
   }
 
-  // Prevent student from double-booking the same time slot (their own pending/approved)
-  const clash = getBookings().filter(b =>
-    b.studentRoll === s.roll &&
-    b.date === date &&
-    b.status !== 'rejected' &&
-    timesOverlap(start, end, b.startTime, b.endTime)
-  );
+  // Prevent student double-booking their own overlapping slot
+  const clash = getBookings().filter(b => {
+    if (b.studentRoll !== s.roll || b.status === 'rejected') return false;
+    const bEndDate = b.endDate || b.date;
+    return datetimeOverlap(date, start, endDate, end, b.date, b.startTime, bEndDate, b.endTime);
+  });
   if (clash.length) {
-    flash('formAlert', 'You already have a booking request for this time window.', 'error'); return;
+    flash('formAlert', 'You already have a booking request overlapping this time window.', 'error'); return;
   }
 
   const booking = {
@@ -314,7 +340,7 @@ function submitBooking() {
     studentEmail: s.email,
     requestedEstate: estate,
     allocatedEstate: estate,
-    date, startTime: start, endTime: end,
+    date, endDate, startTime: start, endTime: end,
     purpose, numPeople, description: desc,
     status: 'pending',
     adminNote: '',
@@ -331,6 +357,7 @@ function resetForm() {
   document.getElementById('estateSelect').value = '';
   document.getElementById('bookingDate').value  = todayStr();
   document.getElementById('startTime').value    = '';
+  document.getElementById('endDay').value       = '0';
   document.getElementById('endTime').innerHTML  = '<option value="">— Select end time —</option>';
   document.querySelectorAll('input[name="purpose"]').forEach(r => r.checked = false);
   document.getElementById('numPeople').value    = '';
@@ -458,7 +485,7 @@ function buildTable(list, pendingOnly) {
         </td>
         <td>
           ${formatDate(b.date)}<br>
-          <strong>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</strong>
+          <strong>${formatTime(b.startTime)} – ${formatTime(b.endTime)}${b.endDate && b.endDate !== b.date ? ' <span style="color:#3b82f6">(+1 day)</span>' : ''}</strong>
         </td>
         <td><span class="purpose-tag ${getPurposeClass(b.purpose)}">${b.purpose}</span></td>
         <td><span class="badge badge-${b.status}">${b.status}</span></td>
@@ -481,7 +508,8 @@ function loadSchedule() {
   if (!date) return;
 
   const list = getBookings().filter(b =>
-    b.date === date && (b.status === 'approved' || b.status === 'modified'));
+    (b.status === 'approved' || b.status === 'modified') &&
+    (b.date === date || b.endDate === date));
 
   const c = document.getElementById('scheduleList');
   if (!list.length) {
@@ -542,15 +570,20 @@ function openModal(id) {
       <div><span class="info-lbl">Purpose</span><span class="purpose-tag ${pc}">${b.purpose}</span></div>
       <div><span class="info-lbl">Requested Estate</span><strong>${b.requestedEstate}</strong></div>
       <div><span class="info-lbl">Allocated Estate</span><strong>${b.allocatedEstate}</strong></div>
-      <div><span class="info-lbl">Date</span>${formatDate(b.date)}</div>
+      <div><span class="info-lbl">Start Date</span>${formatDate(b.date)}</div>
+      <div><span class="info-lbl">End Date</span>${b.endDate && b.endDate !== b.date ? formatDate(b.endDate) + ' <span style="color:#3b82f6;font-size:.75rem">(overnight)</span>' : formatDate(b.date)}</div>
       <div><span class="info-lbl">Time</span><strong>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</strong></div>
       <div><span class="info-lbl">No. of People</span><strong>${b.numPeople || '—'}</strong></div>
       ${b.description ? `<div style="grid-column:1/-1"><span class="info-lbl">Notes</span>${b.description}</div>` : ''}
       <div style="grid-column:1/-1"><span class="info-lbl">Status</span><span class="badge badge-${b.status}">${b.status}</span></div>
     </div>`;
 
+  // Pre-fill modalEndDay based on booking's endDate
+  document.getElementById('modalEndDay').value = (b.endDate && b.endDate !== b.date) ? '1' : '0';
+
   // Warn if requested estate already has a conflict
-  const conflicts = hasConflict(b.requestedEstate, b.date, b.startTime, b.endTime, b.id);
+  const _bEndDate = b.endDate || b.date;
+  const conflicts = hasConflict(b.requestedEstate, b.date, b.startTime, _bEndDate, b.endTime, b.id);
   if (conflicts.length) {
     const w = document.getElementById('conflictWarn');
     w.style.display = 'block';
@@ -585,28 +618,31 @@ function processAction(action) {
 
   } else if (action === 'approve') {
     if (_modifying) {
-      const newEstate = document.getElementById('modalEstate').value;
-      const newStart  = document.getElementById('modalStart').value;
-      const newEnd    = document.getElementById('modalEnd').value;
+      const newEstate  = document.getElementById('modalEstate').value;
+      const newStart   = document.getElementById('modalStart').value;
+      const newEndDay  = document.getElementById('modalEndDay').value;
+      const newEnd     = document.getElementById('modalEnd').value;
+      const newEndDate = newEndDay === '1' ? getNextDay(b.date) : b.date;
 
       if (!newEstate || !newStart || !newEnd) {
         flash('dashAlert', 'Please fill in all modification fields.', 'error'); return;
       }
-      if (newStart >= newEnd) {
-        flash('dashAlert', 'End time must be after start time.', 'error'); return;
+      if (newEndDay === '0' && newStart >= newEnd) {
+        flash('dashAlert', 'End time must be after start time for same-day bookings.', 'error'); return;
       }
 
-      const conflicts = hasConflict(newEstate, b.date, newStart, newEnd, b.id);
+      const conflicts = hasConflict(newEstate, b.date, newStart, newEndDate, newEnd, b.id);
       if (conflicts.length) {
         flash('dashAlert', `⚠️ Conflict: "${newEstate}" is already booked for that slot.`, 'error'); return;
       }
 
       updates = { ...updates, status: 'modified',
-        allocatedEstate: newEstate, startTime: newStart, endTime: newEnd };
+        allocatedEstate: newEstate, startTime: newStart, endTime: newEnd, endDate: newEndDate };
 
     } else {
       // Direct approve — re-check conflicts
-      const conflicts = hasConflict(b.requestedEstate, b.date, b.startTime, b.endTime, b.id);
+      const bEndDate = b.endDate || b.date;
+      const conflicts = hasConflict(b.requestedEstate, b.date, b.startTime, bEndDate, b.endTime, b.id);
       if (conflicts.length) {
         const w = document.getElementById('conflictWarn');
         w.style.display = 'block';
