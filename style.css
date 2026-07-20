@@ -41,16 +41,6 @@ body {
   text-align: center;
 }
 
-.landing-logo {
-  margin-bottom: 30px;
-}
-
-.landing-logo img {
-  height: 80px;
-  width: auto;
-  filter: brightness(0) invert(1);
-}
-
 .landing-emblem {
   font-size: 60px;
   margin-bottom: 20px;
@@ -255,13 +245,8 @@ body {
 
 .header-left {
   display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.header-logo img {
-  height: 50px;
-  width: auto;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .header-left h1 {
