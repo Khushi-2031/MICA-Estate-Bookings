@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCSA Portal · Estate Booking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ─── Login Screen ─────────────────────────────────────────────────────────── -->
+
+<div id="mcsaLoginScreen" class="login-container">
+  <div class="login-card">
+    <div class="login-icon">📋</div>
+    <h1>MCSA Portal</h1>
+    <p>Enter password to access the MCSA booking review system</p>
+
+    <div id="mcsaLoginAlert"></div>
+
+    <div class="login-form">
+      <label>Password</label>
+      <input type="password" id="mcsaPassword" placeholder="Enter MCSA password">
+      <button class="btn btn-primary btn-block" onclick="mcsaLogin()">
+        Login
+      </button>
+    </div>
+
+    <div class="login-footer">
+      <a href="index.html" class="btn btn-outline">← Back to Portal Selection</a>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Dashboard ────────────────────────────────────────────────────────────── -->
+
+<div id="mcsaDashboard" style="display: none;">
+  <header class="header">
+    <div class="header-left">
+      <h1>📋 MCSA Portal</h1>
+      <p>Review and compile estate bookings</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" onclick="mcsaLogout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchMcsaTab('mcsaPending', this)">
+        📥 Pending Bookings
+      </button>
+      <button class="tab" onclick="switchMcsaTab('mcsaCompiled', this)">
+        ✅ My Compilations
+      </button>
+      <button class="tab" onclick="switchMcsaTab('mcsaStats', this)">
+        📊 Statistics
+      </button>
+    </div>
+
+    <!-- Alert -->
+    <div id="mcsaAlert"></div>
+
+    <!-- Tab 1: Pending Bookings -->
+    <div class="tab-pane active" id="mcsaPending">
+      <h2>Pending Bookings to Review</h2>
+      <div class="filter-bar">
+        <input type="date" id="mcsaFilterDate" onchange="loadMcsaPendingBookings()">
+        <select id="mcsaFilterEstate" onchange="loadMcsaPendingBookings()">
+          <option value="">All Estates</option>
+        </select>
+        <button class="btn btn-outline" onclick="clearMcsaFilters()">Clear Filters</button>
+      </div>
+      <div id="mcsaPendingList"></div>
+    </div>
+
+    <!-- Tab 2: Compiled Lists -->
+    <div class="tab-pane" id="mcsaCompiled">
+      <h2>My Daily Compilations</h2>
+      <div class="compilation-actions">
+        <input type="date" id="compilationDate" value="">
+        <button class="btn btn-primary" onclick="compileTodayBookings()">
+          📦 Compile Today's Bookings
+        </button>
+      </div>
+      <div id="mcsaCompiledList"></div>
+    </div>
+
+    <!-- Tab 3: Statistics -->
+    <div class="tab-pane" id="mcsaStats">
+      <h2>Booking Statistics</h2>
+      <div id="mcsaStatsCards" class="stats-grid"></div>
+      <div id="mcsaStatsChart"></div>
+    </div>
+  </main>
+
+  <!-- Modal for MCSA Decision -->
+  <div id="mcsaModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Review Booking Request</h2>
+        <button class="modal-close" onclick="closeMcsaModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="mcsaModalInfo"></div>
+
+        <div class="form-group">
+          <label>MCSA Note</label>
+          <textarea id="mcsaModalNote" placeholder="Add internal note or reason for decision..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="processMcsaReject()">❌ Reject</button>
+        <button class="btn btn-success" onclick="processMcsaApprove()">✅ Approve</button>
+        <button class="btn btn-outline" onclick="closeMcsaModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script src="roles.js"></script>
+<script src="mcsa-functions.js"></script>
+
+<script>
+  // Set today's date as default
+  document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('compilationDate').value = today;
+    document.getElementById('mcsaFilterDate').value = today;
+  });
+</script>
+
+</body>
+</html>

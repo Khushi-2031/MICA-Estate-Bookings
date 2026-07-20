@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration Portal · Estate Booking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ─── Login Screen ─────────────────────────────────────────────────────────── -->
+
+<div id="adminLoginScreen" class="login-container">
+  <div class="login-card">
+    <div class="login-icon">👨‍💼</div>
+    <h1>Administration Portal</h1>
+    <p>Enter password to access the administration booking review system</p>
+
+    <div id="adminLoginAlert"></div>
+
+    <div class="login-form">
+      <label>Password</label>
+      <input type="password" id="adminPassword" placeholder="Enter administration password">
+      <button class="btn btn-primary btn-block" onclick="adminLogin()">
+        Login
+      </button>
+    </div>
+
+    <div class="login-footer">
+      <a href="index.html" class="btn btn-outline">← Back to Portal Selection</a>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Dashboard ────────────────────────────────────────────────────────────── -->
+
+<div id="adminDashboard" style="display: none;">
+  <header class="header">
+    <div class="header-left">
+      <h1>👨‍💼 Administration Portal</h1>
+      <p>Review and finalize estate bookings</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" onclick="adminLogout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchAdminTab('adminCompilations', this)">
+        📋 Pending Compilations
+      </button>
+      <button class="tab" onclick="switchAdminTab('adminReviewDay', this)">
+        📅 Review by Date
+      </button>
+      <button class="tab" onclick="switchAdminTab('adminHistory', this)">
+        📜 History & Archives
+      </button>
+    </div>
+
+    <!-- Alert -->
+    <div id="adminAlert"></div>
+
+    <!-- Tab 1: Pending Compilations -->
+    <div class="tab-pane active" id="adminCompilations">
+      <h2>Compilations Pending Your Review</h2>
+      <div id="adminCompilationsList"></div>
+    </div>
+
+    <!-- Tab 2: Review by Date -->
+    <div class="tab-pane" id="adminReviewDay">
+      <h2>Review Bookings by Date</h2>
+      <div class="filter-bar">
+        <input type="date" id="adminReviewDate">
+        <button class="btn btn-primary" onclick="loadAdminBookingsForDate()">Load Bookings</button>
+        <select id="adminReviewStatus" onchange="loadAdminBookingsForDate()">
+          <option value="">All Statuses</option>
+          <option value="mcsa_approved">MCSA Approved</option>
+          <option value="mcsa_rejected">MCSA Rejected</option>
+          <option value="admin_approved">Admin Approved</option>
+          <option value="admin_rejected">Admin Rejected</option>
+        </select>
+      </div>
+      <div id="adminBookingsList"></div>
+    </div>
+
+    <!-- Tab 3: History & Archives -->
+    <div class="tab-pane" id="adminHistory">
+      <h2>Booking History & Archives</h2>
+      <div class="filter-bar">
+        <input type="date" id="adminHistoryStartDate">
+        <span>to</span>
+        <input type="date" id="adminHistoryEndDate">
+        <button class="btn btn-outline" onclick="loadAdminHistory()">Load History</button>
+      </div>
+      <div id="adminHistoryList"></div>
+    </div>
+  </main>
+
+  <!-- Modal for Admin Decision -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h2>Final Review & Decision</h2>
+        <button class="modal-close" onclick="closeAdminModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="adminModalInfo"></div>
+
+        <div class="form-group">
+          <label>Admin Comment / Communication</label>
+          <textarea id="adminModalComment" placeholder="Add comment or communication to MCSA..."></textarea>
+          <small>This will be visible to MCSA for context</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="processAdminReject()">❌ Reject</button>
+        <button class="btn btn-warning" onclick="processAdminComment()">💬 Comment Only</button>
+        <button class="btn btn-success" onclick="processAdminApprove()">✅ Approve</button>
+        <button class="btn btn-outline" onclick="closeAdminModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script src="roles.js"></script>
+<script src="admin-functions.js"></script>
+
+<script>
+  // Set today's date as default
+  document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('adminReviewDate').value = today;
+    document.getElementById('adminHistoryEndDate').value = today;
+
+    // Set start date to 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    document.getElementById('adminHistoryStartDate').value = sevenDaysAgo.toISOString().split('T')[0];
+  });
+</script>
+
+</body>
+</html>
